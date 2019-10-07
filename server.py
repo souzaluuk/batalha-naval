@@ -2,7 +2,7 @@ import socket
 import select
 import pickle
 
-HEADER_LENGTH = 10
+HEADER_LENGTH = 4096
 IP = "127.0.0.1"
 PORT = 1234
 
@@ -22,35 +22,30 @@ lastClient = {}
 '''
 usuario = {
     "username": "",
-    "escolhas": [(),()],
-    "navios": {(x,y): {
-        "tipo": "",
-        "acertado": bool,
-        "navio": number,
+    "choices": [(),()],
+    "ships": {(x,y): {
+        "type": "",
+        "hitted": bool,
+        "ship": number, #Quantidade de peças desse navio. Para ajudar a identificar se é um vaio de 2 peças, 3 peças e afins.
     },
-    "totalNavioACC": 30,
-    "adversario": Socket. usar clients para acessar o usuário
+    "totalShipACC": 30, #Contador de navios derrubados. Serve para ajudar a acabar a partida.
+    "oponent": Socket. #usar clients para acessar o usuário
 }
 '''
 
 def getInfo(client_socket):
     try:
-        header = client_socket.recv(HEADER_LENGTH)
+        _dict = client_socket.recv(HEADER_LENGTH)
+        print(_dict)
 
-        if not len(header):
+        if not len(_dict):
             return False
         
-        length = int(header.decode("utf-8").strip())
+        pick_dict = pickle.loads(_dict)
 
-        coisa = client_socket.recv(length)
-        coisapick = pickle.loads(coisa)
+        print(pick_dict)      
 
-        print(coisapick)
-
-        coisapick["header"] = header
-        
-
-        return coisapick
+        return pick_dict
     except Exception as e:
         print(e)
         return False
@@ -68,7 +63,7 @@ def getInfo(client_socket):
 #     except:
 #         return False
 
-
+print("Jogo vai iniciar!")
 while True:
     read_sockets, _, exception_sockets = select.select(sockets_list, [], sockets_list)
 
@@ -90,6 +85,7 @@ while True:
                 clients[lastClient]['oponent'] = client_socket
                 client_socket.send(pickle.dumps({"message": f"Você tem um oponente: {clients[lastClient]['username']}"}))
                 lastClient.send(pickle.dumps({"message": f"Você tem um oponente: {clients[client_socket]['username']}"}))
+                lastClient.send(pickle.dumps({"turn": True}))
             else:
                 client_socket.send(pickle.dumps({"message": "Ainda não há oponentes para você!"}))
             
@@ -101,16 +97,77 @@ while True:
             if message is False:
                 print(f"Closed connection from {clients[notified_socket]['username']}")
                 sockets_list.remove(notified_socket)
+                clients[notified_socket]["oponent"].send({"message": f"{clients[notified_socket]['username']} saiu da partida."})
                 del clients[notified_socket]
                 continue
 
             user = clients[notified_socket]
-            print(f"O usuário {user['username']} jogou na posição {message['data']}")
-            #Lógica do jogo.
 
-            for client_socket in clients:
-                if client_socket != notified_socket:
-                    client_socket.send(user['header'] + user['data'] + message['header'] + message['data'])
+            if "move" in message:
+                move = message["move"]
+
+                #TODO: Validar Jogadas repetidas no cliente e retirar isso.
+                if move not in user["choices"]:
+                    user["choices"].append(move)
+                
+                print(f"O usuário {user['username']} jogou na posição {move}")
+                
+                oponent = clients[user["oponent"]]
+                oponent_socket = user["oponent"]
+                
+                if(move in oponent["ships"]):
+                    oponent["ships"][move]["hitted"] = True
+                    oponent["totalShipACC"] -= 1
+
+                    if oponent["totalShipACC"] == 0: #Se o jogo acabou
+                        notified_socket.send(
+                            pickle.dumps(
+                                {"message": f"Você derrubou todos os navios de {oponent['username']}. Parabéns! Você venceu!",
+                                "end": True}
+                            )
+                        )
+                        oponent_socket.send(
+                            pickle.dumps(
+                                {
+                                    "message": f"{user['username']} derrubou todos os seus navios. Infelizmente, você perdeu!",
+                                    "end": True
+                                }
+                            )
+                        )  
+                    else:
+                        #Por enquanto, vai ser uma vez de cada, independente de acertou ou não, mas se quiser mudar isso, basta mandar um "turn"
+                        notified_socket.send(
+                            pickle.dumps(
+                                {"message": f"Você acertou um navio {oponent['ships'][move]['type']}"}
+                            )
+                        )
+                        oponent_socket.send(
+                            pickle.dumps(
+                                {
+                                    "message": f"{user['username']} acertou um navio {oponent['ships'][move]['type']}",
+                                    "turn": True
+                                }
+                            )
+                        )             
+                else:
+                    notified_socket.send(
+                        pickle.dumps(
+                            {"message": "Água! Você errou seu tiro!"}
+                        )
+                    )
+                    oponent_socket.send(
+                        pickle.dumps(
+                            {
+                                "message": f"{user['username']} atirou na água.",
+                                "turn": True
+                            }
+                        )
+                    )
+                #Lógica do jogo.
+
+            # for client_socket in clients:
+            #     if client_socket != notified_socket:
+            #         client_socket.send(user['header'] + user['data'] + message['header'] + message['data'])
         
     for notified_socket in exception_sockets:
         sockets_list.remove(notified_socket)

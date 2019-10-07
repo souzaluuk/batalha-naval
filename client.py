@@ -19,7 +19,50 @@ nav2_3_2 = input("Insira a coordenada 2 formato: (x,y) navio 3 que ocupa 2 posi�
 nav2_4_1 = input("Insira a coordenada 1 formato: (x,y) navio 4 que ocupa 2 posições: ")
 nav2_4_2 = input("Insira a coordenada 2 formato: (x,y) navio 4 que ocupa 2 posições: ")
 
-isMinhaVez = False
+ships = {
+    nav2_1_1 : {
+        "type": "tipo1",
+        "hitted": False,
+        "ship": 2,
+    },
+    nav2_1_2 : {
+        "type": "tipo1",
+        "hitted": False,
+        "ship": 2,
+    },
+    nav2_2_1 : {
+        "type": "tipo1",
+        "hitted": False,
+        "ship": 2,
+    },
+    nav2_2_2 : {
+        "type": "tipo1",
+        "hitted": False,
+        "ship": 2,
+    },
+    nav2_3_1 : {
+        "type": "tipo1",
+        "hitted": False,
+        "ship": 2,
+    },
+    nav2_3_2 : {
+        "type": "tipo1",
+        "hitted": False,
+        "ship": 2,
+    },
+    nav2_4_1 : {
+        "type": "tipo1",
+        "hitted": False,
+        "ship": 2,
+    },
+    nav2_4_2 : {
+        "type": "tipo1",
+        "hitted": False,
+        "ship": 2,
+    }
+}
+
+isMyTurn = False
 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect((IP, PORT))
@@ -28,59 +71,51 @@ client_socket.setblocking(False)
 toSend = pickle.dumps(
     {
         "username": username,
-        "ships": [
-            nav2_1_1, nav2_1_2, nav2_2_1, nav2_2_2, nav2_3_1, nav2_3_2, nav2_4_1, nav2_4_2
-        ],
+        "ships": ships,
         "oponent": False,
         "choices": [],
         "totalShipACC": 30
     }
 )
-sending_header = f"{len(toSend):<{10}}".encode('utf-8')
-client_socket.send(sending_header + toSend)
+client_socket.send(toSend)
 
-data_arr = []
+gameover = False
 
 while True:
-    # if(isMinhaVez):
-    #     message = input("Insira as coordenadas.")
 
-    #     if message:
-    #         message = message.encode('utf-8')
-    #         message_header = f"{len(message):<{HEADER_LENGTH}}".encode('utf-8')
-    #         client_socket.send(message_header + message)
-    #         isMinhaVez = False
+    if gameover: break
+
+    if(isMyTurn):
+        #TODO: Fazer validacao
+        move = input("Insira as coordenadas: ")
+
+        if move:
+            client_socket.send(pickle.dumps({"move": move}))
+            isMyTurn = False
     
     try:
         while True:
             #receive things
             data = client_socket.recv(HEADER_LENGTH)
-            # print(data)
-            # if data:
-            #     data_arr.append(data)
-            #     data = False
-            #     continue
-            
-            # mounted = b"".join(data_arr)
-            if not data: continue
 
-            mess_dict = pickle.loads(data)
-            if not mess_dict:
+            if(not data): continue
+
+            pick_dict = pickle.loads(data)
+
+            if not pick_dict:
                 print("connection closed by the server")
                 sys.exit()
 
-            print(mess_dict['message'])
+            if "turn" in pick_dict:
+                isMyTurn = pick_dict["turn"]
+            
+            if "end" in pick_dict:
+                if pick_dict["end"]:
+                    gameover = True
+                    break
 
-
-            # username = pickle.loads(client_socket.recv(username_length).decode('utf-8'))
-
-            # message_header = client_socket.recv(HEADER_LENGTH)
-            # message_length = int(message_header.decode("utf-8").strip())
-            # message = client_socket.recv(message_length).decode('utf-8')
-
-            isMinhaVez = True
-
-            # print(f"{username} > {message}")
+            if "message" in pick_dict:
+                print(pick_dict['message'])
 
     except IOError as e:
         if e.errno != errno.EAGAIN and e.errno != errno.EWOULDBLOCK:
@@ -91,3 +126,5 @@ while True:
     except Exception as e:
         print('General error', str(e))
         pass
+
+#TODO: Lógica do término do jogo!
