@@ -1,5 +1,7 @@
+from algoritmos import read_ships, generate_coordinate, ships_validation
+from ast import literal_eval as make_tuple
+
 import socket
-import select
 import errno
 import sys
 import pickle
@@ -7,59 +9,78 @@ import pickle
 HEADER_LENGTH = 4096
 IP = "127.0.0.1"
 PORT = 1234
-username = str(input("Insira um nome de usuário: "))
-NUM_NAVIOS = 4
-navios = dict()
+SHIPS = read_ships()
 
-def get_coordenadas_navio(self, inicio, fim):
-    #TO DO: Verificar a reta que forma o navio 
-
-def write(self, text):
-    # Apenas um print mais informativo (dizendo qual usuário está falando)
-    print('[{}]: {}'.format(username, text))    
-
-for i in range(NUM_NAVIOS):
-
-    inicio = input("Insira a coordenada inicial no formato (x,y): ")
-    fim = input("Insira a coordenada final no formato (x,y): ")
-
-    navios = 'id_{i}': {
-        'inicio': isinstance(inicio, tuple),
-        'fim': isinstance(fim, tuple),
-        'coordenadas': [], # TO DO: obter a partir do get_coordenadas_navio
-        'type': '', # TO DO: Verificar a partir do objeto retornado em get_coordenadas_navio
-        'hitted': False
-    }
+# if ships_validation(SHIPS): # apenas validação
+if ships_validation(SHIPS,verbose=True): # validação com comentários
+    print('Navios carregados com sucesso')
+else:
+    exit()
 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect((IP, PORT))
 client_socket.setblocking(False)
-data = {
-    'user': username,
-    'navios': navios
-}
-client_socket.send(pickle.dumps(data))
 
-"""
-    TO DO: O cliente agora deve ficar 'escutando o servidor' para agir conforme ele instruir.
-    Ele deve esperar um dicionário com 3 chaves, sendo estas:
-    {'turn': True (ou False), 'end_game': False  } 
-"""
+username = input("Username: ")
+choices = set()
 
-message = pickle.loads(RESPOSTA_SERVIDOR)
-jogadas = set()
+isMyTurn = False
+gameover = False
 
-if message['end_game'] == False:
-    if message['turn'] == True:
+toSend = pickle.dumps(
+    {
+        "username": username,
+        "ships": SHIPS
+    }
+)
 
-        # Se o jogo não terminou e é meu turno, então, eu jogo!
-        jogada = input('Insira uma coordenada para atacar: ')
-        # Tenta adicionar a coordenada na lista de jogadas, mas, só aceita
-        # coordenadas que são uma tupla e que não sejam repetidas
-        try:
-            jogadas.append(isinstance(jogada, tuple))
-        except Exception as e:
-            self.write('Jogada inválida.')
+client_socket.send(toSend) # envia dicionário com nome e navios, seguindo o template do ships.json
+
+while True:
+    if gameover: break
+
+    while isMyTurn: # executa enquanto for seu turno e não enviar a jogada
+        move = make_tuple(input("Insira as coordenadas (x,y): ")) # leia e converte a jogada em tupla
+
+        # se o movimento existe, possui apenas dois valores (x e y) e ainda não foi realizado
+        if move and len(move)==2 and not move in choices:
+            choices.add(move)
+            client_socket.send(pickle.dumps({"move": move})) # envia a jogada
+            isMyTurn = False
+        else:
+            print("\nCoordenadas inválidas!\n")
     
-else:
-    # TO DO: Encerra a comunicação       
+    # CONTINUAR DAQUI
+    try:
+        while True:
+            #receive things
+            data = client_socket.recv(HEADER_LENGTH)
+
+            if(not data): continue
+
+            pick_dict = pickle.loads(data)
+
+            if not pick_dict:
+                print("connection closed by the server")
+                sys.exit()
+
+            if "turn" in pick_dict:
+                isMyTurn = pick_dict["turn"]
+            
+            if "end" in pick_dict:
+                if pick_dict["end"]:
+                    gameover = True
+                    break
+
+            if "message" in pick_dict:
+                print(pick_dict['message'])
+
+    except IOError as e:
+        if e.errno != errno.EAGAIN and e.errno != errno.EWOULDBLOCK:
+            print('reading error', str(e))
+            sys.exit()
+        continue
+
+    except Exception as e:
+        print('General error', str(e))
+        pass
