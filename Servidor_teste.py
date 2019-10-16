@@ -63,7 +63,7 @@ def get_coordenadas(ships):
 # Adiciona as coordenadas do usuário no dicionário coordenadas
 def set_coordinates(username, user_ships):
     
-    super coordenadas
+    global coordenadas
     coordenadas[username] = {}
     coordenadas[username]['all'] = []
     coordenadas[username]['hitted'] = {}
@@ -72,8 +72,8 @@ def set_coordinates(username, user_ships):
          coordenadas[username]['all'].extend(ships['coordinates'])
 
     # Adiciona o estado de "False"
-    [coordenadas[username]['hitted'][coordenada] = False for coordenada in coordenadas[username]]
-
+    for coordenada in coordenadas[username]['all']:
+        coordenadas[username]['hitted'][coordenada] = False 
 
 print("Servidor iniciado. O jogo está prestes a começar.")
 
