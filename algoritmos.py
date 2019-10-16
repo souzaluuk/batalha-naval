@@ -1,5 +1,48 @@
 import json
 
+def ships_validation(ships,verbose=False):
+    parts_per_type = {
+        "type_5":5,
+        "type_4":4,
+        "type_3":3,
+        "type_2":2
+    }
+    limits = 10
+    all_parts = set()
+    for type in ships.keys():
+        for ship in ships[type]:
+            try:
+                ship_coords = generate_coordinate(ship['start'],ship['end'])
+                if verbose: print('Navio:',ship,'Coord:',ship_coords)
+
+                intersection = sorted(all_parts.intersection(ship_coords))
+                if not intersection:
+                    all_parts.update(ship_coords)
+                else:
+                    if verbose: print('Navio ',ship,' do tipo \'',type,'\' possui interceção em: ',intersection,sep='')
+                    return False
+
+                if len(ship_coords) != parts_per_type[type]:
+                    if verbose: print('Navio ',ship,' do tipo \'',type,'\' não corresponde ao tamanho esperado',sep='')
+                    return False
+            except:
+                if verbose: print('Coordenadas do navio ',ship,' do tipo \'',type,'\' não econtra-se na horizontal ou vertical.',sep='')
+                return False
+
+    parts_expected = [(x,y) for y in range(limits) for x in range(limits)]
+
+    if not all_parts.issubset(parts_expected):
+        if verbose: print("Coordenadas fora do limite do tabuleiro:",sorted(all_parts.difference(parts_expected)))
+        return False
+    if verbose:
+        print("- Total de peças:",len(all_parts))
+        for x in range(10):
+            for y in range(10):
+                print('0' if (x,y) in all_parts else '-',end=' ')
+            print()
+    return True
+            
+
 def read_ships(name_file='ships.json'):
     return json.loads(open(name_file).read())
 
@@ -9,12 +52,12 @@ def generate_coordinate(pixel_a:tuple,pixel_b:tuple):
         x2,y2 = p2
         delta_x = x2-x1
         delta_y = y2-y1
-        return delta_y/delta_x if delta_x!=0 else delta_y
+        return delta_y/delta_x if delta_x!=0 else float('inf')
 
     def reflexao(p1:tuple,p2:tuple):
         trocaxy = trocax = trocay = False
         valor_m = calc_m(p1,p2) # coeficiente angular
-
+        
         x1,y1 = p1
         x2,y2 = p2
 
@@ -49,22 +92,23 @@ def generate_coordinate(pixel_a:tuple,pixel_b:tuple):
     m = calc_m(p1,p2) # guarda o cálculo de (x2-x1)/(y2-y1)
 
     if m != 0:
-        raise Exception('As coordenadas não são válidas')
+        raise Exception('As coordenadas devem formar uma linha na horizontal ou vertical')
 
     x1,y1 = p1
     x2,_ = p2
 
-    pixels = list() # lista de pixels que será retornada
+    pixels = set()
     e = m - 0.5 # primeiro valor de 'e'
 
-    pixels.append(p1)
+    pixels.add(p1)
     while x1 < x2-1:
         if e >= 0:
             y1 += 1
             e -= 1
         x1 += 1
         e += m
-        pixels.append((x1,y1))
-    pixels.append(p2)
+        pixels.add((x1,y1))
+    pixels.add(p2)
+    pixels = sorted(pixels)
     _reflexao(pixels,trocaxy,trocax,trocay)
     return pixels
