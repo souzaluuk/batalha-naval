@@ -1,6 +1,7 @@
 import socket
 import select
 import pickle
+import algoritmos as alg
 
 HEADER_LENGTH = 4096
 IP = "127.0.0.1"
@@ -22,13 +23,19 @@ lastClient = {}
 '''
 usuario = {
     "username": "",
-    "choices": [(),()],
-    "ships": {(x,y): {
-        "type": "",
-        "hitted": bool,
-        "ship": number, #Quantidade de peças desse navio. Para ajudar a identificar se é um vaio de 2 peças, 3 peças e afins.
+    "all_coordinates": (x,y): "type_x-index",
+    "ships": {"type_x": [
+        {
+            "coordinates": [(x,y),(a,b)]
+            "type": x
+        },
+        {
+            "coordinates": [(d,f),(t,s)]
+            "type": x
+        }
+    ]
+        
     },
-    "totalShipACC": 30, #Contador de navios derrubados. Serve para ajudar a acabar a partida.
     "oponent": Socket. #usar clients para acessar o usuário
 }
 '''
@@ -36,32 +43,42 @@ usuario = {
 def getInfo(client_socket):
     try:
         _dict = client_socket.recv(HEADER_LENGTH)
-        print(_dict)
 
         if not len(_dict):
             return False
         
-        pick_dict = pickle.loads(_dict)
-
-        print(pick_dict)      
+        pick_dict = pickle.loads(_dict)  
 
         return pick_dict
     except Exception as e:
         print(e)
         return False
 
-# def getMove(client_socket):
-#     try:
-#         message_header = client_socket.recv(HEADER_LENGTH)
+def get_coordinates(ships):
 
-#         if not len(message_header):
-#             return False
-        
-#         message_length = int(message_header.decode("utf-8").strip())
+    all_coordinates = dict()
 
-#         return {"header": message_header, "data": client_socket.recv(message_length)}
-#     except:
-#         return False
+    for name, types in ships.items():
+
+        ship_type = name.split("_")[1]
+
+        for ship in range(len(types)):
+
+            ship_index = f"{name}-{ship}"
+
+            start = tuple(types[ship]['start'])
+            ending = tuple(types[ship]['end'])
+
+            coordinates = alg.generate_coordinate(start, ending)
+
+            for coordinate in range(len(coordinates)):
+                all_coordinates[coordinates[coordinate]] = ship_index+"-"+str(coordinate)
+
+            del types[ship]['start']
+            del types[ship]['end']
+            types[ship]['coordinates'] = coordinates
+    
+    return [ships, all_coordinates]
 
 print("Jogo vai iniciar!")
 while True:
@@ -77,17 +94,39 @@ while True:
             
             sockets_list.append(client_socket)
 
+            user["ships"], user["all_coordinates"] = get_coordinates(user["ships"])
+
             clients[client_socket] = user
 
             print(f"Accepted new connection from {client_address[0]}:{client_address[1]} username:{user['username']}")
+            print(user)
+
             if len(clients) % 2 == 0:
                 clients[client_socket]['oponent'] = lastClient
                 clients[lastClient]['oponent'] = client_socket
-                client_socket.send(pickle.dumps({"message": f"Você tem um oponente: {clients[lastClient]['username']}"}))
-                lastClient.send(pickle.dumps({"message": f"Você tem um oponente: {clients[client_socket]['username']}"}))
-                lastClient.send(pickle.dumps({"turn": True}))
+                client_socket.send(
+                    pickle.dumps(
+                        {
+                            "code": 2,
+                            "params": {
+                                "oponent": clients[lastClient]['username']
+                            }
+                        }
+                    )
+                )
+                lastClient.send(
+                    pickle.dumps(
+                        {
+                            "code": 2,
+                            "params": {
+                                "oponent": clients[client_socket]['username'],
+                                "turn": True
+                            }
+                        }
+                    )
+                )
             else:
-                client_socket.send(pickle.dumps({"message": "Ainda não há oponentes para você!"}))
+                client_socket.send(pickle.dumps({"code": 1}))
             
             lastClient = client_socket
         
@@ -97,7 +136,7 @@ while True:
             if message is False:
                 print(f"Closed connection from {clients[notified_socket]['username']}")
                 sockets_list.remove(notified_socket)
-                clients[notified_socket]["oponent"].send({"message": f"{clients[notified_socket]['username']} saiu da partida."})
+                clients[notified_socket]["oponent"].send(pickle.dumps({"code": 3}))
                 del clients[notified_socket]
                 continue
 
@@ -105,69 +144,49 @@ while True:
 
             if "move" in message:
                 move = message["move"]
-
-                #TODO: Validar Jogadas repetidas no cliente e retirar isso.
-                if move not in user["choices"]:
-                    user["choices"].append(move)
                 
                 print(f"O usuário {user['username']} jogou na posição {move}")
                 
                 oponent = clients[user["oponent"]]
                 oponent_socket = user["oponent"]
                 
-                if(move in oponent["ships"]):
-                    oponent["ships"][move]["hitted"] = True
-                    oponent["totalShipACC"] -= 1
+                if(move in oponent["all_coordinates"]):
+                    ship_index = oponent["all_coordinates"].pop(move).split("-")
+                    del oponent["ships"][ship_index[0]][int(ship_index[1])]["coordinates"][int(ship_index[2])]
 
-                    if oponent["totalShipACC"] == 0: #Se o jogo acabou
-                        notified_socket.send(
-                            pickle.dumps(
-                                {"message": f"Você derrubou todos os navios de {oponent['username']}. Parabéns! Você venceu!",
-                                "end": True}
-                            )
-                        )
-                        oponent_socket.send(
-                            pickle.dumps(
-                                {
-                                    "message": f"{user['username']} derrubou todos os seus navios. Infelizmente, você perdeu!",
-                                    "end": True
-                                }
-                            )
-                        )  
+                    if len(oponent["all_coordinates"]) == 0: #Se o jogo acabou
+                        notified_socket.send(pickle.dumps({"code": 10}))
+                        oponent_socket.send(pickle.dumps({"code": 11}))  
                     else:
-                        #Por enquanto, vai ser uma vez de cada, independente de acertou ou não, mas se quiser mudar isso, basta mandar um "turn"
-                        notified_socket.send(
-                            pickle.dumps(
-                                {"message": f"Você acertou um navio {oponent['ships'][move]['type']}"}
-                            )
-                        )
-                        oponent_socket.send(
-                            pickle.dumps(
-                                {
-                                    "message": f"{user['username']} acertou um navio {oponent['ships'][move]['type']}",
-                                    "turn": True
+                        if len(oponent["ships"][ship_index[0]][int(ship_index[1])]) == 0: #Se o navio foi derrubado
+                            notified_socket.send(pickle.dumps({
+                                "code": 8,
+                                "params": {
+                                    "type": int(ship_index[0])
                                 }
-                            )
-                        )             
+                            }))
+                            oponent_socket.send(pickle.dumps({
+                                "code": 9,
+                                "params": {
+                                    "type": int(ship_index[0])
+                                }
+                            }))
+                        else:
+                            notified_socket.send(pickle.dumps({
+                                "code": 4,
+                                "params": {
+                                    "type": int(ship_index[0])
+                                }
+                            }))
+                            oponent_socket.send(pickle.dumps({
+                                "code": 5,
+                                "params": {
+                                    "type": int(ship_index[0])
+                                }
+                            }))          
                 else:
-                    notified_socket.send(
-                        pickle.dumps(
-                            {"message": "Água! Você errou seu tiro!"}
-                        )
-                    )
-                    oponent_socket.send(
-                        pickle.dumps(
-                            {
-                                "message": f"{user['username']} atirou na água.",
-                                "turn": True
-                            }
-                        )
-                    )
-                #Lógica do jogo.
-
-            # for client_socket in clients:
-            #     if client_socket != notified_socket:
-            #         client_socket.send(user['header'] + user['data'] + message['header'] + message['data'])
+                    notified_socket.send(pickle.dumps({"code": 6}))
+                    oponent_socket.send(pickle.dumps({"code": 7}))
         
     for notified_socket in exception_sockets:
         sockets_list.remove(notified_socket)
