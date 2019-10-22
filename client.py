@@ -1,5 +1,7 @@
+from algoritmos import read_ships, generate_coordinate, ships_validation, validMove
+from ast import literal_eval as make_tuple
+
 import socket
-import select
 import errno
 import sys
 import pickle
@@ -7,92 +9,47 @@ import pickle
 HEADER_LENGTH = 4096
 IP = "127.0.0.1"
 PORT = 1234
+SHIPS = read_ships()
 
-username = input("Username: ")
-# TODO: validar o formato.
-nav2_1_1 = input("Insira a coordenada 1 formato: (x,y) navio 1 que ocupa 2 posições: ")
-nav2_1_2 = input("Insira a coordenada 2 formato: (x,y) navio 1 que ocupa 2 posições: ")
-nav2_2_1 = input("Insira a coordenada 1 formato: (x,y) navio 2 que ocupa 2 posições: ")
-nav2_2_2 = input("Insira a coordenada 2 formato: (x,y) navio 2 que ocupa 2 posições: ")
-nav2_3_1 = input("Insira a coordenada 1 formato: (x,y) navio 3 que ocupa 2 posições: ")
-nav2_3_2 = input("Insira a coordenada 2 formato: (x,y) navio 3 que ocupa 2 posições: ")
-nav2_4_1 = input("Insira a coordenada 1 formato: (x,y) navio 4 que ocupa 2 posições: ")
-nav2_4_2 = input("Insira a coordenada 2 formato: (x,y) navio 4 que ocupa 2 posições: ")
-
-ships = {
-    nav2_1_1 : {
-        "type": "tipo1",
-        "hitted": False,
-        "ship": 2,
-    },
-    nav2_1_2 : {
-        "type": "tipo1",
-        "hitted": False,
-        "ship": 2,
-    },
-    nav2_2_1 : {
-        "type": "tipo1",
-        "hitted": False,
-        "ship": 2,
-    },
-    nav2_2_2 : {
-        "type": "tipo1",
-        "hitted": False,
-        "ship": 2,
-    },
-    nav2_3_1 : {
-        "type": "tipo1",
-        "hitted": False,
-        "ship": 2,
-    },
-    nav2_3_2 : {
-        "type": "tipo1",
-        "hitted": False,
-        "ship": 2,
-    },
-    nav2_4_1 : {
-        "type": "tipo1",
-        "hitted": False,
-        "ship": 2,
-    },
-    nav2_4_2 : {
-        "type": "tipo1",
-        "hitted": False,
-        "ship": 2,
-    }
-}
-
-isMyTurn = False
+# if ships_validation(SHIPS): # apenas validação
+if ships_validation(SHIPS,verbose=True): # validação com comentários
+    print('Navios carregados com sucesso')
+else:
+    exit()
 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect((IP, PORT))
 client_socket.setblocking(False)
 
+username = input("Username: ")
+choices = set()
+
+isMyTurn = False
+gameover = False
+
 toSend = pickle.dumps(
     {
         "username": username,
-        "ships": ships,
-        "oponent": False,
-        "choices": [],
-        "totalShipACC": 30
+        "ships": SHIPS
     }
 )
-client_socket.send(toSend)
 
-gameover = False
+client_socket.send(toSend) # envia dicionário com nome e navios, seguindo o template do ships.json
 
 while True:
-
     if gameover: break
 
-    if(isMyTurn):
-        #TODO: Fazer validacao
-        move = input("Insira as coordenadas: ")
-
-        if move:
-            client_socket.send(pickle.dumps({"move": move}))
+    while isMyTurn: # executa enquanto for seu turno e não enviar a jogada
+        move = make_tuple(input("Insira as coordenadas (x,y): ")) # leia e converte a jogada em tupla
+        # se o movimento existe, possui apenas dois valores (x e y) e ainda não foi realizado
+        if move in choices:
+            print("\nJogada já realizada!\n")
+        elif not validMove(move):
+            print("\nCoordenadas inválidas!\n")
+        else:
+            choices.add(move)
+            client_socket.send(pickle.dumps({"move": move})) # envia a jogada
             isMyTurn = False
-    
     try:
         while True:
             #receive things
@@ -105,17 +62,49 @@ while True:
             if not pick_dict:
                 print("connection closed by the server")
                 sys.exit()
-
-            if "turn" in pick_dict:
-                isMyTurn = pick_dict["turn"]
             
-            if "end" in pick_dict:
-                if pick_dict["end"]:
-                    gameover = True
-                    break
+            # print(pick_dict)
+            code = pick_dict.get("code")
+            params = pick_dict.get("params")
 
-            if "message" in pick_dict:
-                print(pick_dict['message'])
+            if code == 2:
+                isMyTurn = params["turn"] if params.get("turn") else False
+                print("Foi encontrado um oponente para você\n")
+                if isMyTurn:
+                    print("É sua vez!\n")
+                else:
+                    print("É a vez do oponente! Aguarde sua vez!\n")
+
+            elif code == 3:
+                print("Oponente abandonou a partida, conexão perdida!")
+                exit()
+            elif code == 4:
+                print("Você atingiu um navio do oponente. Jogue novamente!")
+                isMyTurn = True
+            elif code == 5:
+                print("Oponente atingiu um navio. Ainda é a vez do oponente!")
+                isMyTurn = False
+            elif code == 6:
+                print("Tiro na água. Vez do oponente.")
+                isMyTurn = False
+            elif code == 7:
+                print("Oponente atingiu a água. É a sua vez!")
+                isMyTurn = True
+            elif code == 8:
+                print("Você abateu um navio do tipo:",params.get("type"))
+                isMyTurn = True
+            elif code == 9:
+                print("Você teve um navio abatido do tipo:",params.get("type"))
+                isMyTurn = False
+            elif code == 10:
+                print("Você é o vencedor, parabéns!")
+                exit()
+            elif code == 11:
+                print("Você é o perdedor, tente novamente!")
+                exit()
+
+            if code == 1 or not isMyTurn:
+                print("\nAguardando oponente")
 
     except IOError as e:
         if e.errno != errno.EAGAIN and e.errno != errno.EWOULDBLOCK:
@@ -126,5 +115,3 @@ while True:
     except Exception as e:
         print('General error', str(e))
         pass
-
-#TODO: Lógica do término do jogo!

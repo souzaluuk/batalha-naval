@@ -59,9 +59,6 @@ def get_coordinates(ships):
     all_coordinates = dict()
 
     for name, types in ships.items():
-
-        ship_type = name.split("_")[1]
-
         for ship in range(len(types)):
 
             ship_index = f"{name}-{ship}"
@@ -72,7 +69,7 @@ def get_coordinates(ships):
             coordinates = alg.generate_coordinate(start, ending)
 
             for coordinate in range(len(coordinates)):
-                all_coordinates[coordinates[coordinate]] = ship_index+"-"+str(coordinate)
+                all_coordinates[coordinates[coordinate]] = ship_index
 
             del types[ship]['start']
             del types[ship]['end']
@@ -153,13 +150,14 @@ while True:
                 
                 if(move in oponent["all_coordinates"]):
                     ship_index = oponent["all_coordinates"].pop(move).split("-")
-                    del oponent["ships"][ship_index[0]][int(ship_index[1])]["coordinates"][int(ship_index[2])]
-
+                    oponent["ships"][ship_index[0]][int(ship_index[1])]["coordinates"].remove(move)
+                    print(ship_index)
+                    print(oponent["ships"][ship_index[0]][int(ship_index[1])]["coordinates"])
                     if len(oponent["all_coordinates"]) == 0: #Se o jogo acabou
                         notified_socket.send(pickle.dumps({"code": 10}))
                         oponent_socket.send(pickle.dumps({"code": 11}))  
                     else:
-                        if len(oponent["ships"][ship_index[0]][int(ship_index[1])]) == 0: #Se o navio foi derrubado
+                        if len(oponent["ships"][ship_index[0]][int(ship_index[1])]["coordinates"]) == 0: #Se o navio foi derrubado
                             notified_socket.send(pickle.dumps({
                                 "code": 8,
                                 "params": {
