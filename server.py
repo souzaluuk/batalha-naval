@@ -109,7 +109,8 @@ while True:
                         {
                             "code": 2,
                             "params": {
-                                "oponent": clients[lastClient]['username']
+                                "oponent": clients[lastClient]['username'],
+                                "turn": False
                             }
                         }
                     )

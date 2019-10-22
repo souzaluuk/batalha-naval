@@ -1,4 +1,9 @@
 import json
+LIMIT = 10
+
+def validMove(move:tuple):
+    limit_set = set(range(LIMIT))
+    return type(move) == tuple and limit_set.issuperset(move) and len(move) == 2
 
 def ships_validation(ships,verbose=False):
     parts_per_type = {
@@ -7,7 +12,6 @@ def ships_validation(ships,verbose=False):
         "type_3":3,
         "type_2":2
     }
-    limits = 10
     all_parts = set()
     for type in ships.keys():
         for ship in ships[type]:
@@ -29,7 +33,7 @@ def ships_validation(ships,verbose=False):
                 if verbose: print('Coordenadas do navio ',ship,' do tipo \'',type,'\' não econtra-se na horizontal ou vertical.',sep='')
                 return False
 
-    parts_expected = [(x,y) for y in range(limits) for x in range(limits)]
+    parts_expected = [(x,y) for y in range(LIMIT) for x in range(LIMIT)]
 
     if not all_parts.issubset(parts_expected):
         if verbose: print("Coordenadas fora do limite do tabuleiro:",sorted(all_parts.difference(parts_expected)))

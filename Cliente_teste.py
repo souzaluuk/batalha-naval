@@ -1,4 +1,4 @@
-from algoritmos import read_ships, generate_coordinate, ships_validation
+from algoritmos import read_ships, generate_coordinate, ships_validation, validMove
 from ast import literal_eval as make_tuple
 
 import socket
@@ -41,16 +41,15 @@ while True:
 
     while isMyTurn: # executa enquanto for seu turno e não enviar a jogada
         move = make_tuple(input("Insira as coordenadas (x,y): ")) # leia e converte a jogada em tupla
-
         # se o movimento existe, possui apenas dois valores (x e y) e ainda não foi realizado
-        if move and len(move)==2 and not move in choices:
+        if move in choices:
+            print("\nJogada já realizada!\n")
+        elif not validMove(move):
+            print("\nCoordenadas inválidas!\n")
+        else:
             choices.add(move)
             client_socket.send(pickle.dumps({"move": move})) # envia a jogada
             isMyTurn = False
-        else:
-            print("\nCoordenadas inválidas!\n")
-    
-    # CONTINUAR DAQUI
     try:
         while True:
             #receive things
@@ -63,17 +62,43 @@ while True:
             if not pick_dict:
                 print("connection closed by the server")
                 sys.exit()
-
-            if "turn" in pick_dict:
-                isMyTurn = pick_dict["turn"]
             
-            if "end" in pick_dict:
-                if pick_dict["end"]:
-                    gameover = True
-                    break
+            # print(pick_dict)
+            code = pick_dict.get("code")
+            params = pick_dict.get("params")
 
-            if "message" in pick_dict:
-                print(pick_dict['message'])
+            if code == 2:
+                isMyTurn = params["turn"] if params.get("turn") else False
+            elif code == 3:
+                print("Oponente abandonou a partida, conexão perdida!")
+                exit()
+            elif code == 4:
+                print("Você atingiu um navio do oponente")
+                isMyTurn = True
+            elif code == 5:
+                print("Oponente atingiu um navio")
+                isMyTurn = False
+            elif code == 6:
+                print("Tiro na água")
+                isMyTurn = False
+            elif code == 7:
+                print("Oponente atingiu a água")
+                isMyTurn = True
+            elif code == 8:
+                print("Você abateu um navio do tipo:",params.get("type"))
+                isMyTurn = True
+            elif code == 9:
+                print("Você teve um navio abatido do tipo:",params.get("type"))
+                isMyTurn = False
+            elif code == 10:
+                print("Você é o vencedor, parabéns!")
+                exit()
+            elif code == 11:
+                print("Você é o perdedor, tente novamente!")
+                exit()
+
+            if code == 1 or not isMyTurn:
+                print("\nAguardando oponente")
 
     except IOError as e:
         if e.errno != errno.EAGAIN and e.errno != errno.EWOULDBLOCK:
