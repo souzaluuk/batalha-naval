@@ -19,14 +19,12 @@ ToServer:
 }
 
 4: {
-  message: f"Você acertou um navio {oponent['ships']['type']}
-  params: tipo do navio (quantas peças tem)
+  message: f"Você acertou um navio.
   action: isMyTurn = True para que o usuário possa jogar.
 }
 
 5: {
-  message: f"{oponent['username']} acertou um navio {ships['type']}. Aguarde mais uma jogada."
-  params: tipo do navio (quantas peças tem)
+  message: f"{oponent['username']} acertou um navio. Aguarde mais uma jogada."
   action: isMyTurn permanece falso e o usuário aguarda mais uma jogada.
 } 
 

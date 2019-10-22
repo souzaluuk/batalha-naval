@@ -162,28 +162,18 @@ while True:
                             notified_socket.send(pickle.dumps({
                                 "code": 8,
                                 "params": {
-                                    "type": int(ship_index[0])
+                                    "type": int(ship_index[0].split("_")[1])
                                 }
                             }))
                             oponent_socket.send(pickle.dumps({
                                 "code": 9,
                                 "params": {
-                                    "type": int(ship_index[0])
+                                    "type": int(ship_index[0].split("_")[1])
                                 }
                             }))
                         else:
-                            notified_socket.send(pickle.dumps({
-                                "code": 4,
-                                "params": {
-                                    "type": int(ship_index[0])
-                                }
-                            }))
-                            oponent_socket.send(pickle.dumps({
-                                "code": 5,
-                                "params": {
-                                    "type": int(ship_index[0])
-                                }
-                            }))          
+                            notified_socket.send(pickle.dumps({"code": 4}))
+                            oponent_socket.send(pickle.dumps({"code": 5}))          
                 else:
                     notified_socket.send(pickle.dumps({"code": 6}))
                     oponent_socket.send(pickle.dumps({"code": 7}))
