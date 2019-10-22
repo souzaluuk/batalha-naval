@@ -40,16 +40,21 @@ while True:
     if gameover: break
 
     while isMyTurn: # executa enquanto for seu turno e não enviar a jogada
-        move = make_tuple(input("Insira as coordenadas (x,y): ")) # leia e converte a jogada em tupla
-        # se o movimento existe, possui apenas dois valores (x e y) e ainda não foi realizado
-        if move in choices:
-            print("\nJogada já realizada!\n")
-        elif not validMove(move):
-            print("\nCoordenadas inválidas!\n")
-        else:
-            choices.add(move)
-            client_socket.send(pickle.dumps({"move": move})) # envia a jogada
-            isMyTurn = False
+        move = None
+        try:
+            move = make_tuple(input("Insira as coordenadas (x,y): ")) # leia e converte a jogada em tupla
+            # se o movimento existe, possui apenas dois valores (x e y) e ainda não foi realizado
+            if move in choices:
+                print("\nJogada já realizada!\n")
+            elif not validMove(move):
+                print("\nCoordenadas inválidas!\n")
+            else:
+                choices.add(move)
+                client_socket.send(pickle.dumps({"move": move})) # envia a jogada
+                isMyTurn = False
+        except:
+            print("Isso nem é uma coordenada!")
+            
     try:
         while True:
             #receive things
