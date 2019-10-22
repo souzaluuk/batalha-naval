@@ -25,7 +25,7 @@ OK Reconhece navios inválidos(diagonais, fora do plano, abaixo/acima do tamanho
 OK Reconhece jogadas válidas.
 OK Reconhece jogadas inválidas.
 OK Reconhece jogadas repetidas.
-ERRO2 Se o usuário pressionar a tecla ENTER na sua vez sem inserção de dados a aplicação é encerrada
+RESOLVIDO ERRO2 Se o usuário pressionar a tecla ENTER na sua vez sem inserção de dados a aplicação é encerrada
       em ambos clientes. (Comportamento planejado para ser assim?)
 OBS1 Não existem restrições quanto a ausência ou adição de navios de um deternimado tipo,
      o usuário jogará com o que ele dispôs no tabuleiro.(Comportamento planejado para ser assim?)
