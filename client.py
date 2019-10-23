@@ -5,11 +5,12 @@ import socket
 import errno
 import sys
 import pickle
+import random
 
 HEADER_LENGTH = 4096
 IP = "127.0.0.1"
 PORT = 1234
-SHIPS = read_ships("ships.json") # indique um arquivo customizado se quiser
+SHIPS = read_ships("./Tabuleiros/ships"+str(random.randint(1, 6))+".json") # indique um arquivo customizado se quiser
 
 # if ships_validation(SHIPS): # apenas validação
 if ships_validation(SHIPS,verbose=True): # validação com comentários

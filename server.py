@@ -134,7 +134,10 @@ while True:
             if message is False:
                 print(f"Closed connection from {clients[notified_socket]['username']}")
                 sockets_list.remove(notified_socket)
-                clients[notified_socket]["oponent"].send(pickle.dumps({"code": 3}))
+                try:
+                    clients[notified_socket]["oponent"].send(pickle.dumps({"code": 3}))
+                except Exception as e:
+                    print(e)
                 del clients[notified_socket]
                 continue
 

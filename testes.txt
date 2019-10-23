@@ -11,11 +11,13 @@ OK O servidor está aceitando conexões normalmente.
 OK O servidor está pareando jogadores normalmente (teste realizado com 6 usuários).
 OK A conexão dos clientes é encerrada imediatamente se o jogador da vez abandonar o jogo.
 OK* A conexão do usuário aguardando é encerrada imediatamente se este abandonar o jogo, o usuário da vez
-    é desconectado SOMENTE após fazer realizar uma jogada.
+    é desconectado SOMENTE após fazer realizar uma jogada. 
+    ---[Não tem como resolver isso, pois o input (encontrada de dados) bloqueia o terminal]---
 OK O servidor aceita novas conexões caso o jogador da vez abandone um jogo. 
 OK Conexões imediatamente encerradas após um usuário vencer a partida.
-ERRO1 O servidor NÃO aceita novas conexões caso o jogador aguardando a vez ou aguardando um oponente abandone um jogo, 
+RESOLVIDO ERRO1 O servidor NÃO aceita novas conexões caso o jogador aguardando a vez ou aguardando um oponente abandone um jogo, 
       ele é encerrado e todas as outras conexões são perdidas.
+      [feito]
 
 #Trocas de dados/informações:
 
@@ -27,8 +29,9 @@ OK Reconhece jogadas inválidas.
 OK Reconhece jogadas repetidas.
 RESOLVIDO ERRO2 Se o usuário pressionar a tecla ENTER na sua vez sem inserção de dados a aplicação é encerrada
       em ambos clientes. (Comportamento planejado para ser assim?)
-OBS1 Não existem restrições quanto a ausência ou adição de navios de um deternimado tipo,
+OBS1 Não existem restrições quanto a ausência ou adição de navios de um determinado tipo,
      o usuário jogará com o que ele dispôs no tabuleiro.(Comportamento planejado para ser assim?)
+     ---[Realmente não entendi isso, até porque os navios são dispostos automaticamente.]---
 OBS2 Devido a OBS1 um jogador pode ter mais navios que seu oponente.
 
 #Permissões
@@ -49,6 +52,7 @@ OK Mensagem de coordenada de navio fora do plano exibida corretamente.
 OK Mensagem de navio abaixo/acima do tamanho padrão do tipo de navio exibida corretamente.
 OK Mensagem de desconexão/abandono de oponente exibida corretamente ao usuário aguardando a vez.
 OK* Mensagem de desconexão/abandono de oponente é exibida ao usuário da vez SOMENTE após uma jogada.
+---[Devido ao efeito bloqueante do input (entrada de dados)]---
 OK Mensagem de tiro efetivo exibida corretamente.
 OK Mensagem de tiro na água exibida corretamente.
 OK Mensagem de jogada repetida exibida corretamente.
@@ -58,8 +62,11 @@ OK Mensagem de tiro efetivo do oponente exibida corretamente.
 OK Mensagem de jogador vencedor exibida corretamente.
 OK Mensagem de jogador perdedor exibida corretamente.
 OBS3 Não é exibido ao usuário quem é o seu oponente.
+---[Preguiça do pessoal do cliente (falo mais nada), pois o username é enviado.]---
 OBS4 Se ambas verificações: verticalidade/horizontalidade(1) e pertencimento ao plano(2) falharem somente
      uma mensagem de invalidez correspondente a (1) é exibida.
+     ---[De novo, se for em relação ao navio, ele é inserido automaticamente.]---
 OBS5 Se um usuário está na tela de inserção de username, se um segundo usuário insere seu username
      antes do primeiro o fazer, este não verá a mensagem de "aguardando um oponente"; será disparada
      diretamente a mensagem de oponente encontrado assim que o outro usuário inserir seu username.
+     ---[Porque ele não vai estar aguardando um oponente aparecer, já que já o tem.]---
