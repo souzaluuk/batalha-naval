@@ -98,10 +98,10 @@ while True:
                 print(f"{oponentUsername} atingiu a água. É a sua vez!")
                 isMyTurn = True
             elif code == 8:
-                print(f"Você abateu um navio do tipo: {params.get("type")}. Jogue novamente!")
+                print(f"Você abateu um navio do tipo: {params.get('type')}. Jogue novamente!")
                 isMyTurn = True
             elif code == 9:
-                print("Você teve um navio abatido do tipo:",params.get("type"))
+                print("Você teve um navio abatido do tipo:",params.get('type'))
                 isMyTurn = False
             elif code == 10:
                 print("Você é o vencedor, parabéns!")
