@@ -27,7 +27,7 @@ choices = set()
 
 isMyTurn = False
 gameover = False
-
+oponentUsername = ""
 toSend = pickle.dumps(
     {
         "username": username,
@@ -75,29 +75,30 @@ while True:
 
             if code == 2:
                 isMyTurn = params["turn"] if params.get("turn") else False
-                print("Foi encontrado um oponente para você\n")
+                oponentUsername = params.get("oponent")
+                print(f"Foi encontrado um oponente para você: {oponentUsername}\n")
                 if isMyTurn:
                     print("É sua vez!\n")
                 else:
-                    print("É a vez do oponente! Aguarde sua vez!\n")
+                    print(f"É a vez de {oponentUsername}! Aguarde sua vez!\n")
 
             elif code == 3:
-                print("Oponente abandonou a partida, conexão perdida!")
+                print(f"{oponentUsername} abandonou a partida, conexão perdida!")
                 exit()
             elif code == 4:
-                print("Você atingiu um navio do oponente. Jogue novamente!")
+                print(f"Você atingiu um navio de {oponentUsername}. Jogue novamente!")
                 isMyTurn = True
             elif code == 5:
-                print("Oponente atingiu um navio. Ainda é a vez do oponente!")
+                print(f"Você teve um navio atingido. Ainda é a vez do {oponentUsername}!")
                 isMyTurn = False
             elif code == 6:
-                print("Tiro na água. Vez do oponente.")
+                print(f"Tiro na água. Vez de {oponentUsername}.")
                 isMyTurn = False
             elif code == 7:
-                print("Oponente atingiu a água. É a sua vez!")
+                print(f"{oponentUsername} atingiu a água. É a sua vez!")
                 isMyTurn = True
             elif code == 8:
-                print("Você abateu um navio do tipo:",params.get("type"))
+                print(f"Você abateu um navio do tipo: {params.get("type")}. Jogue novamente!")
                 isMyTurn = True
             elif code == 9:
                 print("Você teve um navio abatido do tipo:",params.get("type"))
@@ -106,7 +107,7 @@ while True:
                 print("Você é o vencedor, parabéns!")
                 exit()
             elif code == 11:
-                print("Você é o perdedor, tente novamente!")
+                print(f"Você é o perdedor, tente novamente! Vitória de {oponentUsername}")
                 exit()
 
             if code == 1 or not isMyTurn:
