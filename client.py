@@ -42,8 +42,8 @@ while True:
     while isMyTurn: # executa enquanto for seu turno e não enviar a jogada
         move = None
         try:
-            move = make_tuple(input("Insira as coordenadas (x,y): ")) # leia e converte a jogada em tupla
-            # se o movimento existe, possui apenas dois valores (x e y) e ainda não foi realizado
+            move = make_tuple(input("Insira as coordenadas (x,y): ")) # lê e converte a jogada em tupla
+            # se o movimento existe, se possui apenas dois valores (x e y) e ainda não foi realizado
             if move in choices:
                 print("\nJogada já realizada!\n")
             elif not validMove(move):
